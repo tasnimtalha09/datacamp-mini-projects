@@ -1,0 +1,109 @@
+---
+title: "Actual Solution"
+output: html_document
+---
+
+```{r}
+# Load packages
+library(tidyverse)
+```
+
+```{r}
+# Load the CSV data
+super_bowls <- read_csv("Input Datasets/super_bowls.csv")
+tv <- read_csv("Input Datasets/tv.csv")
+```
+```{r}
+# Q1: Do large point differences result in lost viewers?
+
+# Plot a histogram of point differences
+ggplot(super_bowls, aes(difference_pts)) +
+ geom_histogram(binwidth = 2) +
+ labs(x = "Point Difference", y = "Number of Super Bowls")
+```
+```{r}
+# Display the closest game and largest point difference
+super_bowls  %>% 
+ filter(difference_pts == min(difference_pts) | difference_pts == max(difference_pts))
+
+super_bowls
+```
+
+```{r}
+# Merge the game data and TV data
+# Optional: you may see that this will result in some outliers in the visualization, you can remove these by filtering out the first game with filter(super_bowl != 1) 
+games_tv <- tv  %>% inner_join(super_bowls, by = "super_bowl")
+
+# Optional: keep rows with finite values only for the columns you are plotting
+# games_tv <- games_tv %>% filter(is.finite(difference_pts) & is.finite(share_household))
+```
+```{r}
+# Create a scatter plot with a linear regression model
+ggplot(games_tv, aes(difference_pts, share_household)) +
+ geom_point() +
+ geom_smooth(method = "lm") +
+ labs(x = "Point Difference", y = "Viewership (household share)")
+```
+```{r}
+# Interpret the visualization and store your answer to the question
+# Interpretation: The downward sloping regression line and the 95% confidence interval for that regression suggest that it is common to lose viewers if there is a large point difference. However, you must take it with a grain of salt because the linear relationship in the data is weak due to the small sample size.
+score_impact = "weak"
+score_impact
+```
+```{r}
+# Q2: How has the number of viewers and TV ratings trended alongside advertisement costs? Which one increases first?
+
+# Convert the data format for plotting
+games_tv_plot_avg_us_viewers <- games_tv %>%
+    select(super_bowl, avg_us_viewers) %>%
+    mutate(category = "Average number of US viewers", value = avg_us_viewers) %>%
+    select(super_bowl, category, value)
+
+games_tv_plot_rating_household <- games_tv %>%
+    select(super_bowl, rating_household) %>%
+    mutate(category = "Household rating", value = rating_household) %>%
+    select(super_bowl, category, value)
+
+games_tv_plot_ad_cost <- games_tv %>%
+    select(super_bowl, ad_cost) %>%
+    mutate(category = "Advertisement cost (USD)", value = ad_cost) %>%
+    select(super_bowl, category, value)
+
+games_tv_plot <- bind_rows(games_tv_plot_avg_us_viewers, 
+                           games_tv_plot_rating_household, 
+                           games_tv_plot_ad_cost)
+```
+```{r}
+# Here is a more efficient way to convert the data using pivot_longer()
+# games_tv_plot <- games_tv %>%
+#     pivot_longer(cols = c(avg_us_viewers, rating_household, ad_cost), 
+#                  names_to = "category", 
+#                  values_to = "value") %>%
+#     mutate(cat_name = case_when(category == "avg_us_viewers" ~ "Average number of US viewers",
+#                                 category == "rating_household" ~ "Household rating",
+#                                 category == "ad_cost" ~ "Advertisement cost (USD)",
+#                                 TRUE ~ as.character(category)))
+```
+```{r}
+# Plot the data
+ggplot(games_tv_plot) +
+  geom_line(data = games_tv_plot %>% filter(category == "Average number of US viewers"),
+            aes(x = super_bowl, y = value / max(value), color = "Average number of US viewers")) +
+  geom_line(data = games_tv_plot %>% filter(category == "Household rating"),
+            aes(x = super_bowl, y = value / max(value), color = "Household rating")) +
+  geom_line(data = games_tv_plot %>% filter(category == "Advertisement cost (USD)"),
+            aes(x = super_bowl, y = value / max(value), color = "Advertisement cost (USD)")) +
+  labs(x = "Super Bowl", y = "Scaled Value (0–1)", color = "Category")
+```
+```{r}
+# Optional: here is a fast way to plot the data using facet_wrap()
+# ggplot(games_tv_plot, aes(super_bowl, value)) +
+#  geom_line() +
+#  facet_wrap(~ category, scales = "free", nrow = 3) + 
+#  labs(x = "Super Bowl", y = "")
+```
+```{r}
+# Interpret the visualization and store your answer to the question
+# Interpretation: The ratings increased before advertisement costs did, but viewers were increasing quickly as well. Perhaps TV networks didn't know how to use this data to demand higher advertisement costs sooner, or they needed more evidence before they could justify the increase.
+first_to_increase = "ratings"
+```

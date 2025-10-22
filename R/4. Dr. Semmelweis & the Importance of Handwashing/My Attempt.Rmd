@@ -1,0 +1,68 @@
+---
+title: "My Attempt"
+output: html_document
+---
+
+```{r}
+# Importing the necessary libraries
+library(tidyverse)
+message("The libraries have been loaded successfully.")
+```
+```{r}
+# Taking a look into the datasets
+yearly <- read_csv("Input Datasets/yearly_deaths_by_clinic.csv")
+monthly <- read_csv("Input Datasets/monthly_deaths.csv")
+
+head(yearly)
+head(monthly)
+```
+
+# Q: How much did handwashing reduce monthly death rates on average?
+
+```{r}
+# Adding a proportion column
+yearly <- yearly %>% 
+  mutate(proportion = round(deaths / births, 4))
+
+monthly <- monthly %>% 
+  mutate(proportion = round(deaths / births, 4))
+
+head(yearly)
+head(monthly)
+```
+```{r}
+# Visualising the yearly deaths
+ggplot(data = yearly,
+       aes(x = year, y = proportion, colour = clinic)) +
+  geom_line(size = 1) +
+  theme_classic()
+```
+```{r}
+# Visualising the monthly deaths
+ggplot(data = monthly,
+       aes(x = date, y = proportion)) +
+  geom_line(size = 1) +
+  theme_classic()
+```
+```{r}
+# Adding the information that handwash started from June 01, 1847
+monthly <- monthly %>% 
+  mutate(handwashing_started = ifelse(test = date >= "1847-06-01", yes = TRUE, no = FALSE))
+
+monthly
+```
+```{r}
+# Visualising the data again
+ggplot(data = monthly,
+       aes(x = date, y = proportion, colour = handwashing_started)) +
+  geom_line(size = 1) +
+  theme_classic()
+```
+```{r}
+# Generating the summary
+monthly_summary <- monthly %>% 
+  group_by(handwashing_started) %>% 
+  summarise(death_proportion = mean(proportion))
+
+monthly_summary
+```

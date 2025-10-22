@@ -1,0 +1,68 @@
+```{r}
+# Load the libraries
+library(tidyverse)
+library(rio)
+
+message("The libraries have been loaded successfully.")
+```
+```{r}
+# Load the dataset
+stack_overflow <- import("Input Datasets/stack_overflow_data.csv")
+head(stack_overflow)
+```
+```{r}
+# Let's take a look at the dataset
+glimpse(stack_overflow)
+```
+
+## Q1: Analyze the number of questions tagged with R each year compared to the total number of questions across all tags per year. Save the result in a data frame, r_over_time, containing five columns: year, tag, num_questions, year_total, and percentage (proportion of R questions).
+
+```{r}
+r_over_time <- stack_overflow %>% 
+  group_by(year) %>%
+  filter(tag == "r") %>% 
+  mutate(percentage = num_questions / year_total * 100)
+
+r_over_time
+```
+```{r}
+# Bonus: Let's see graphically the usage of R over the years
+ggplot(data = r_over_time, aes(x = year, y = percentage)) + 
+  geom_line() + 
+  ggtitle("Growth of the use of R over the years")
+```
+
+## Q2. Calculate the percentage of all questions in 2020 that were tagged with R. Save your answer as a numeric variable, r_percentage, expressed as a decimal.
+
+```{r}
+r_2020 <- stack_overflow %>% 
+  filter(year == 2020, tag == "r") %>%
+  mutate(percentage = num_questions / year_total * 100)
+
+r_percentage <- r_2020$percentage
+r_percentage
+```
+
+## Q3. Identify the five programming language tags with the highest total number of questions asked between 2015 and 2020. Save the tag names as a character vector, highest_tags.
+
+```{r}
+tags_year <- stack_overflow %>% 
+  filter(between(x = year, left = 2015, right = 2020)) %>% 
+  group_by(tag) %>% 
+  summarise(sum_questions = sum(num_questions)) %>% 
+  arrange(desc(sum_questions)) %>% 
+  slice_max(sum_questions, n = 5)
+
+highest_tags <- tags_year$tag
+highest_tags
+```
+```{r}
+# Bonus: Visualize the answer
+#Filter for the five largest tags
+data_subset <- data_percentage %>%
+   filter(tag %in% highest_tags, year >= 2015)
+
+# Plot tags over time on a line plot using color to represent tag
+ggplot(data_subset, aes(x = year, y = percentage, color = tag)) +
+  geom_line()
+```

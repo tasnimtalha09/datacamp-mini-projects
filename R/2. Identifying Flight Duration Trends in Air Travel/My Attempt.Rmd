@@ -1,0 +1,92 @@
+---
+title: "My_Attempt"
+output: html_document
+---
+
+```{r}
+# Load the libraries
+library(tidyverse)
+library(rio)
+message("The libraries have been loaded successfully.")
+```
+```{r}
+# Let's take a look at the datasets
+airlines <- import("Input Datasets/airlines.csv")
+airports <- import("Input Datasets/airports.csv")
+flights <- import("Input Datasets/flights2022-h2.csv")
+
+head(airlines)
+head(airports)
+head(flights)
+```
+
+# Q1: Which airline and airport pair receives the most flights from NYC and what is the average duration of that flight?
+
+Save your answer as a data frame called frequent with one row and a minimum of two columns: airline_name, airport_name.
+
+```{r}
+# Joining the flights & the airlines dataset
+join1 <- left_join(x = flights, y = airlines, by = "carrier") %>% 
+  rename("airline_name" = "name")
+
+# Joining the first join & the airports dataset
+dataset_joined <- left_join(x = join1, y = airports, by = c("dest" = "faa")) %>% 
+  rename("airport_name" = "name")
+
+head(dataset_joined)
+```
+
+```{r}
+# Converting the travel time into hours
+dataset_joined <- dataset_joined %>%
+  mutate(flight_duration = air_time / 60)
+  
+head(dataset_joined)
+```
+```{r}
+# Preparing the metrics
+dataset_paired <- dataset_joined %>% 
+  group_by(airline_name, airport_name) %>% 
+  summarise(avg_flight_duration = mean(flight_duration, na.rm = TRUE),
+            count = n()) %>% 
+  ungroup()
+
+head(dataset_paired)
+```
+```{r}
+# Finding out the highest airline-airport pair
+frequent <- dataset_paired %>% 
+  arrange(desc(count)) %>% 
+  head(n = 1)
+
+frequent
+```
+
+# Q2: Find the airport that has the longest average flight duration (in hours) from NYC. What is the name of this airport?
+
+Save your answer as a data frame called longest with one row and a minimum of two columns: airline_name, airport_name.
+
+```{r}
+longest <- dataset_paired %>% 
+  arrange(desc(avg_flight_duration)) %>% 
+  head(n = 1)
+
+longest
+```
+
+# Q3: Which airport is the least frequented destination for flights departing from JFK?
+
+Save your answer as a character string called least.
+
+```{r}
+# Taking only the JFK dataset
+least <- dataset_joined %>% 
+  filter(origin == "JFK") %>% 
+  group_by(airport_name) %>% 
+  summarise(count = n()) %>% 
+  arrange(count) %>% 
+  head(1) %>% 
+  pull(airport_name)
+
+least
+```

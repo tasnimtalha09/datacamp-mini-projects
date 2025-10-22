@@ -1,0 +1,84 @@
+---
+title: "My Attempt"
+output: html_document
+---
+
+```{r}
+# Loading the necessary libraries
+library(tidyverse)
+message("The libraries have been loaded successfully.")
+```
+```{r}
+# Taking a look into the datasets
+halftime_musicians <- read_csv("Input Datasets/halftime_musicians.csv")
+super_bowls <- read_csv("Input Datasets/super_bowls.csv")
+tv <- read_csv("Input Datasets/tv.csv")
+
+head(halftime_musicians)
+head(super_bowls)
+head(tv)
+```
+
+# Q2: Do large point differences result in lost viewers across super bowl games? Visualize and interpret the data, storing your string answer to score_impact (either "strong", "weak", or "none").
+
+```{r}
+# Combining the datasets
+dataset_combined <- left_join(x = tv, y = super_bowls, by = "super_bowl")
+head(dataset_combined)
+```
+```{r}
+# Extracting only the point difference & viewership columns
+viewership_status <- dataset_combined %>% 
+  select(c(avg_us_viewers, difference_pts)) %>% 
+  arrange(difference_pts)
+viewership_status
+```
+```{r}
+# Visualising the data
+ggplot(viewership_status,
+       aes(x = difference_pts, 
+           y = avg_us_viewers)) +
+  geom_line(colour = "red", size = 1) +
+  scale_x_continuous(name = "Point Difference", breaks = seq(0, 50, 5)) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Viewership vs Point Difference",
+       caption = "The viewership is decreasing with the increase in point difference.",
+    y = "Viewership (household share)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black"))
+```
+```{r}
+# The final answer
+score_impact <- "weak"
+score_impact
+```
+
+# Q2: How has the number of viewers and TV ratings trended alongside advertisement costs? Which one increases first? Visualize and interpret the data, storing your string answer to first_to_increase (either "viewers", "ratings", or "ads").
+
+```{r}
+# Extracting only the superbowl no., viewership, ratings, & ad cost columns
+rating_status <- dataset_combined %>% 
+  select(c(super_bowl, avg_us_viewers, rating_household, ad_cost)) %>% 
+  arrange(super_bowl)
+
+head(rating_status)
+```
+```{r}
+# Visualising the data
+ggplot(data = rating_status,
+       aes(x = super_bowl)) +
+  geom_line(aes(y = avg_us_viewers, colour = "avg_us_viewers"), size = 1.5) +
+  geom_line(aes(y = rating_household, colour = "rating_household"), size = 1.5) +
+  geom_line(aes(y = ad_cost, colour = "ad_cost"), size = 1.5) +
+  labs(title = "Advertisement Costs, Viewerships, & Ratings over the Superbowls",
+       x = "Superbowl no.",
+       y = "Advertisement Costs, Viewerships, Ratings",
+       caption = "Viewership increases across the superbowls.") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16, colour = "black"))
+```
+```{r}
+# The final answer
+first_to_increase <- "viewers"
+first_to_increase
+```
